@@ -1,5 +1,3 @@
-const { onRequest } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
 const express = require("express");
 const cors = require("cors");
 const { NFC } = require("nfc-pcsc");
@@ -20,27 +18,27 @@ let currentReader = null;
 
 /* ======================= NFC Events ======================= */
 nfc.on("reader", (reader) => {
-    logger.info(`${reader.reader.name} device attached`);
+    console.log(`${reader.reader.name} device attached`);
     currentReader = reader;
 
     // Event: Card detected
     reader.on("card", async (card) => {
-        logger.info(`${reader.reader.name} card detected:`, card);
+        console.log(`${reader.reader.name} card detected:`, card);
     });
 
     // Event: Card removed
     reader.on("card.off", (card) => {
-        logger.info(`${reader.reader.name} card removed:`, card);
+        console.log(`${reader.reader.name} card removed:`, card);
     });
 
     // Event: Reader error
     reader.on("error", (err) => {
-        logger.error(`${reader.reader.name} an error occurred:`, err);
+        console.log(`${reader.reader.name} an error occurred:`, err);
     });
 
     // Event: Reader disconnected
     reader.on("end", () => {
-        logger.info(`${reader.reader.name} device removed`);
+        console.log(`${reader.reader.name} device removed`);
         currentReader = null;
     });
 });
@@ -48,7 +46,7 @@ nfc.on("reader", (reader) => {
 
 // Event: NFC initialization error
 nfc.on("error", (err) => {
-    logger.error("NFC initialization error:", err);
+    console.log("NFC initialization error:", err);
 });
 
 /* ======================= Express Routes ======================= */
@@ -68,7 +66,7 @@ app.post("/nfcWrite", async (req, res) => {
         }
 
         const dataString = JSON.stringify(data);
-        logger.debug("Data to write to NFC tag:", dataString);
+        console.log("Data to write to NFC tag:", dataString);
 
         if (Buffer.byteLength(dataString) > 180) {
             return res.status(400).send("Data exceeds the maximum size of 180 bytes.");
@@ -84,13 +82,13 @@ app.post("/nfcWrite", async (req, res) => {
             await currentReader.write(4 + i, chunk); // Write the chunk to the NFC tag
             console.debug(`Writing chunk ${i}: ${chunk.toString('utf-8')}`);
         }
-        logger.info("Data successfully written to NFC tag");
+        console.log("Data successfully written to NFC tag");
 
         return res.status(200).send({
             message: "Data successfully written to NFC tag"
         })
     } catch (error) {
-        logger.error("Error writing to NFC tag:", error);
+        console.log("Error writing to NFC tag:", error);
         return res.status(500).send({
             error: `Error writing to NFC tag`
         });
@@ -142,17 +140,16 @@ app.get("/nfcRead", async (req, res) => {
 
         return res.status(200).send({ data });
     } catch (error) {
-        logger.error("Error reading NFC tag:", error);
+        console.log("Error reading NFC tag:", error);
         res.status(500).send("Error reading NFC tag");
     }
-});
+});  
 
 
 /* ======================= Server Start ======================= */
 
-app.listen(port, () => {
-    logger.info(`Server is running on port ${port}`);
+app.listen(port, () => { 
+    console.log(`Server is running on port ${port}`);
 });
 
 
-exports.app = onRequest(app);
